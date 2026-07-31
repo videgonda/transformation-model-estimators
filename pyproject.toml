@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "transformation-models"
+version = "0.1.0"
+description = "Rank estimation of transformation models (Chen 2002, Ye & Duan 1997)"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+# Needed for the engression estimator, used both in the Monte Carlo
+# (engression_monte_carlo.py) and in the air-quality application.
+# Pinned to the version used for the thesis; the API changed in later releases
+# (e.g. the `num_epoches` argument was renamed).
+engression = ["torch", "engression==0.1.9"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
