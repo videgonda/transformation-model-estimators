@@ -396,10 +396,12 @@ class YeDuanEstimator:
         Location normalisation: Lambda(y0) = 0.
     estimation_interval : (y_low, y_high)
     delta_n : int or None
-        Number of Z-bins. If None, auto-selected as ceil(c * n^r),
-        r=0.30 in (1/4, 1/3) per Ye & Duan Assumption 5.
-    n_strips : int
-        Number of splicing extensions for F. Default 4.
+        Number of Z-bins. If None, auto-selected as
+        max(8, min(n // 20, ceil(5 * n**(1/3)))).
+        Ye & Duan's Assumption (v) requires delta_n ~ c * n**r with r in the
+        open interval (1/4, 1/3). The rule above grows at r = 1/3, the upper
+        endpoint, which gives the finest bins compatible with that range; the
+        cap n // 20 and the floor 8 are finite-sample safeguards.
     """
 
     def __init__(
@@ -447,10 +449,12 @@ class YeDuanEstimator:
         # Ye & Duan: delta_n = ceil(c * n^r), r in (1/4, 1/3).
         # We use a slightly higher multiplier to get finer bins.
         if self.delta_n is None:
-            # Rule: delta_n = min(n // 60, 2 * n^{1/3}), capped so each bin has
-            # at least ~60 observations at small n (reduces variance / clip exclusions),
-            # while growing as n^{1/3} for large n (reduces discretisation bias O(n^{-1/3})).
-            # The cap n // 60 only binds for n <= ~1300; above that n^{1/3} dominates.
+            # Rule: delta_n = max(8, min(n // 20, ceil(5 * n**(1/3)))).
+            # The n**(1/3) term sets the growth rate: finer bins reduce the
+            # discretisation bias of G_hat, whose bin width is O(n^{-1/3}).
+            # The cap n // 20 keeps roughly 20 observations per bin and binds
+            # for n < 1000; the floor 8 binds for n < 160. At n = 1000 both
+            # branches give 50, which is the delta_n reported in the thesis.
             delta_n = max(8, min(n // 20, int(np.ceil(5.0 * n ** (1.0 / 3.0)))))
         else:
             delta_n = self.delta_n
