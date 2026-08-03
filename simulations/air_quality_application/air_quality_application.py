@@ -1,6 +1,6 @@
 """
-Application of the Chen (2002) and Ye & Duan (1997) estimators to
-air quality data.
+Application of the Chen (2002), Ye & Duan (1997), and engression estimators
+to air quality data.
 
 Model:  Lambda(Y) = X beta + epsilon
 
@@ -9,15 +9,15 @@ Model:  Lambda(Y) = X beta + epsilon
 
 The script:
 1. Loads and cleans the CSV.
-2. Estimates beta via Han's MRC.
-3. Fits both estimators (Chen rank, Ye-Duan SQE).
+2. Estimates beta on the full sample via Han's MRC.
+3. Fits the three estimators (Chen rank, Ye-Duan SQE, engression).
 4. Exports CSV files for pgfplots (thesis figures).
 
 Usage:
-    python simulations/air_quality_application.py --csv path/to/air_quality.csv
+    python3 simulations/air_quality_application/air_quality_application.py --csv path/to/air_quality.csv
 
 Output (in results/):
-    lambda_estimates.csv   — Lambda_hat(y) for both estimators + reference curves
+    lambda_estimates.csv   — Lambda_hat(y) for the three estimators + reference curves
     F_hat_ye_duan.csv      — Estimated error CDF from Ye-Duan
     scatter_data.csv       — (Y, Z) subsample for scatter plot
 """
@@ -213,14 +213,9 @@ def main():
     # 2. Estimate beta via Han's MRC
     # ------------------------------------------------------------------
     print("\n=== Estimating beta (Han's MRC) ===")
-    # Subsample for beta estimation (MRC is O(n^2))
-    if n > 3000:
-        rng = np.random.default_rng(42)
-        idx_sub = rng.choice(n, 3000, replace=False)
-        Y_sub, X_sub = Y[idx_sub], X[idx_sub]
-        print(f"  Using subsample of {len(Y_sub)} for beta estimation")
-    else:
-        Y_sub, X_sub = Y, X
+    # Estimate beta on the full sample. MRC is O(n^2), but at this n it runs in
+    # ~40 s, so we avoid subsampling; the estimate is then deterministic.
+    Y_sub, X_sub = Y, X
 
     t0 = time.time()
     beta_hat = han_mrc(Y_sub, X_sub, sign_b1=-1.0, n_restarts=10)
